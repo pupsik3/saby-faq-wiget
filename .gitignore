@@ -26,3 +26,8 @@
 /build-reveal-previews.cjs
 /.DS_Store
 /Thumbs.db
+
+# Local fonts not used by this prototype or the publication manifest.
+/Fonts/Accordion-Font/
+/Fonts/Inter/Inter-Medium-hint.ttf
+/Fonts/Inter/Inter-MediumItalic-hint.ttf

@@ -34,7 +34,7 @@ function audit(){
  }
  if(findings.length)throw Error(findings.join('\n'));
  const secretFiles=[];
- for(const f of repositoryFiles.filter(f=>/\.(?:js|cjs|css|html|md|yml|svg)$/.test(f))){const text=read(f);if(/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|\bgh[pousr]_[A-Za-z0-9]{30,}|\bgithub_pat_[A-Za-z0-9_]{40,}|\bAKIA[A-Z0-9]{16}\b/.test(text))secretFiles.push(f);}
+ for(const f of repositoryFiles.filter(f=>/\.(?:js|cjs|css|html|md|yml|svg)$/.test(f))){const text=read(f);if(text.includes('\0'))throw Error('Unexpected NUL bytes in text file: '+f);if(/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|\bgh[pousr]_[A-Za-z0-9]{30,}|\bgithub_pat_[A-Za-z0-9_]{40,}|\bAKIA[A-Z0-9]{16}\b/.test(text))secretFiles.push(f);}
  if(secretFiles.length)throw Error('Potential secret detected; values withheld: '+secretFiles.join(', '));
  const reportDir=path.join(root,'.publication');fs.mkdirSync(reportDir,{recursive:true});
  fs.writeFileSync(path.join(reportDir,'repository-files.txt'),repositoryFiles.join('\n')+'\n');
