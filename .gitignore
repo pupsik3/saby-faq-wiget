@@ -1,0 +1,28 @@
+# Local output; source and documentation remain tracked.
+/dist/
+/.publication/
+/tmp/
+/node_modules/
+/.env
+/.env.*
+!/.env.example
+*.log
+*.pem
+*.key
+*.p12
+*.pfx
+*.zip
+*.7z
+*.pdf
+# Design exports and local browser captures are not publication sources.
+/*.png
+/*.jpg
+/*.gif
+/design-*.txt
+/structure.txt
+/concept/
+/verify*.cjs
+/probe*.cjs
+/build-reveal-previews.cjs
+/.DS_Store
+/Thumbs.db
