@@ -4,6 +4,7 @@ window.createFaqPropertyGrid = function(api) {
   const borderDefaults=()=>({enabled:false,color:'#D2D6DA',opacity:100,line:'solid',thickness:1,sides:['top','right','bottom','left']});
   const faqStyleDefaults=()=>({border:borderDefaults(),rounding:{enabled:false,value:6}});
   const styleDefaults=()=>({border:borderDefaults(),rounding:{enabled:false,value:6},background:{color:null,opacity:100},padding:{top:0,right:0,bottom:0,left:0}});
+  const standardQuestionFont=()=>({size:16,weight:400,openWeight:400,line:'24px',spacing:'0px',styleId:'main'});
   function profileStyles(id){const faqStyle=faqStyleDefaults(),spoilerStyle=styleDefaults();if(id==='outline'){faqStyle.border.enabled=true;faqStyle.rounding={enabled:true,value:8};spoilerStyle.padding={top:12,right:12,bottom:12,left:12};}if(id==='filled'){spoilerStyle.background.color='#F3F5F7';spoilerStyle.rounding={enabled:true,value:8};spoilerStyle.padding={top:12,right:12,bottom:12,left:12};}return {faqStyle,spoilerStyle};}
   const defaults = () => ({faqStyle:faqStyleDefaults(),spoilerStyle:styleDefaults(),background:{enabled:true,color:null,opacity:100},dividers:{enabled:false,color:'#D2D6DA',opacity:100,line:'solid',thickness:1,outer:false},button:{side:'left',edges:false,visible:true,icon:'triangle',editor:buttonEditorDefaults(),visibilityPolicy:'always'},question:{color:'#000000',opacity:100,style:'main',bold:null,italic:false,underline:null,strike:false},answer:{style:"main",color:"#000000",opacity:100,bold:null,italic:false,underline:false,strike:false},size:{horizontal:0,vertical:0,gap:8,gapCustom:false},accent:{scope:'none',width:0,opacity:100},appearance:'standard',presetManaged:false,appearanceModified:false,reveal:'inline'});
   const normalized = value => {
@@ -11,7 +12,7 @@ window.createFaqPropertyGrid = function(api) {
     const editor=value?.button?.editor||{};
     const profiles=profileStyles(value?.appearance);
     const normalizeStyle=(v,fallback,faq=false)=>{const d=v||fallback;const style={...styleDefaults(),...clone(d),border:{...borderDefaults(),...clone(d?.border||{})},rounding:{enabled:false,value:6,...d?.rounding},background:{color:null,opacity:100,...d?.background},padding:{top:0,right:0,bottom:0,left:0,...d?.padding}};if(faq){delete style.background;delete style.padding;}return style;};
-    return {...base,...structuredClone(value || {}),faqStyle:normalizeStyle(value?.faqStyle,profiles.faqStyle,true),spoilerStyle:normalizeStyle(value?.spoilerStyle,profiles.spoilerStyle),accent:clone(value?.accent||accentFor(value?.appearance)),background:{...base.background,...value?.background,enabled:true},dividers:{...base.dividers,...value?.dividers,...(!value?.faqStyle&&value?.appearance==='outline'?{enabled:true}:{})},button:{...base.button,...value?.button,editor:{...base.button.editor,...editor,states:{rest:{...editor.states?.rest},hover:{...editor.states?.hover},active:{...editor.states?.active},activeHover:{...editor.states?.activeHover}}}},question:{...base.question,...value?.question,...(value?.question?.style==='preset'?{style:'main'}:{}),font:{...clone(value?.question?.font||appearanceFont(value?.appearance||'standard')),...(value?.question?.style==='preset'?{styleId:'main'}:{})},underlineStyle:value?.question?.underlineStyle||(value?.appearance==='link'?'dashed':'solid')},answer:{...base.answer,...value?.answer},size:{...base.size,...value?.size,...(!value?.faqStyle&&value?.appearance==='outline'&&!value?.size?.gapCustom?{gap:0}:{})}};
+    return {...base,...structuredClone(value || {}),faqStyle:normalizeStyle(value?.faqStyle,profiles.faqStyle,true),spoilerStyle:normalizeStyle(value?.spoilerStyle,profiles.spoilerStyle),accent:clone(value?.accent||accentFor(value?.appearance)),background:{...base.background,...value?.background,enabled:true},dividers:{...base.dividers,...value?.dividers,...(!value?.faqStyle&&value?.appearance==='outline'?{enabled:true}:{})},button:{...base.button,...value?.button,editor:{...base.button.editor,...editor,states:{rest:{...editor.states?.rest},hover:{...editor.states?.hover},active:{...editor.states?.active},activeHover:{...editor.states?.activeHover}}}},question:{...base.question,...value?.question,...(value?.question?.style==='preset'?{style:'main'}:{}),font:{...clone(value?.question?.font||(!value?.appearance||value.appearance==='standard'?standardQuestionFont():appearanceFont(value.appearance))),...(value?.question?.style==='preset'?{styleId:'main'}:{})},underlineStyle:value?.question?.underlineStyle||(value?.appearance==='link'?'dashed':'solid')},answer:{...base.answer,...value?.answer},size:{...base.size,...value?.size,...(!value?.faqStyle&&value?.appearance==='outline'&&!value?.size?.gapCustom?{gap:0}:{})}};
   };
   const clone = value => structuredClone(value);
   const later = 'Будет подключено следующим этапом';
@@ -61,6 +62,18 @@ window.createFaqPropertyGrid = function(api) {
     }
     if(Object.keys(overrides).length)(item.settings??={}).propertyGridOverrides=overrides;
     else if(item.settings?.propertyGridOverrides)delete item.settings.propertyGridOverrides;
+  }
+  function detachedSettings(id){
+    const item=itemById(id),settings=effectiveSettings(item);
+    if(!item||standalone()||settings.appearance!=='outline')return settings;
+    // A FAQ frame belongs to the container. Once separated, each item owns it.
+    for(const key of ['border','rounding']){
+      if(!settings.spoilerStyle[key].enabled)settings.spoilerStyle[key]=clone(settings.faqStyle[key]);
+      for(const [path,value] of Object.entries(item.settings?.propertyGridOverrides||{})){
+        if(under(path,'spoilerStyle.'+key))assignPath(settings,path,value);
+      }
+    }
+    return settings;
   }
   function replaceCommonOverrides(){
     if(standalone())return;
@@ -197,7 +210,7 @@ window.createFaqPropertyGrid = function(api) {
       activeHover:{iconColor:rgba(id==='filled'?'#CCCCCC':id==='link'?'#CCCCCC':id==='text-button'?'#575757':'#333333'),sourceActiveColor:id==='filled'?'#575757':id==='text-button'||id==='link'?'#CCCCCC':'#333333',background:rgba(id==='standard'?'#F3F4F8':id==='accent-line'||id==='outline'?'#333333':null,id==='accent-line'?5:id==='outline'?10:100),rounding:{enabled:true,value:id==='standard'?6:['accent-line','outline','filled'].includes(id)?100:6},sourceActiveBackground:rgba(null),sourceActiveRounding:{enabled:true,value:['standard','accent-line','outline','filled'].includes(id)?100:6}}
     }}};
     button.visibilityPolicy=id==='link'?'editor-hover':'always';
-    const values={...profileStyles(id),dividers:{...defaults().dividers,enabled:id==='outline'},size:{gap:id==='outline'?0:id==='filled'?8:10},accent:accentFor(id),question:{color:id==='link'?'#0085F2':'#000000',hoverColor:id==='link'?'#106CB7':null,hoverBaseColor:id==='link'?'#0085F2':null,opacity:100,style:'main',font:{...appearanceFont(id),styleId:'main'},bold:null,italic:false,underline:id==='link',underlineStyle:id==='link'?'dashed':'solid',strike:false},button};
+    const values={...profileStyles(id),dividers:{...defaults().dividers,enabled:id==='outline'},size:{gap:id==='standard'?defaults().size.gap:id==='outline'?0:id==='filled'?8:10},accent:accentFor(id),question:{color:id==='link'?'#0085F2':'#000000',hoverColor:id==='link'?'#106CB7':null,hoverBaseColor:id==='link'?'#0085F2':null,opacity:100,style:'main',font:{...(id==='standard'?standardQuestionFont():appearanceFont(id)),styleId:'main'},bold:null,italic:false,underline:id==='link',underlineStyle:id==='link'?'dashed':'solid',strike:false},button};
     if(asStandalone){if(id==='outline'){values.spoilerStyle.border=clone(values.faqStyle.border);values.spoilerStyle.rounding=clone(values.faqStyle.rounding);}values.faqStyle=faqStyleDefaults();values.dividers.enabled=false;if(id==='accent-line')values.accent={scope:'none',width:0,opacity:100};}
     return values;
   }
@@ -761,7 +774,7 @@ window.createFaqPropertyGrid = function(api) {
   });
   window.addEventListener('resize',position);
   new ResizeObserver(position).observe(api.faqElement);
-  return {open,cancel,save,paint,position,makeOverrides(value,base){const a=individualBase(normalized(base)),b=individualBase(normalized(value)),values=leaves(b);return Object.fromEntries(changedPaths(a,b).filter(allowedPath).map(path=>[path,clone(values[path])]));},demoSettings:(id,context)=>id?normalized({...presetValues(id,context==='faq'?false:standalone()),appearance:id}):normalized(defaults()),openMenuFor(context,anchor){
+  return {open,cancel,save,paint,position,detachedSettings,makeOverrides(value,base){const a=individualBase(normalized(base)),b=individualBase(normalized(value)),values=leaves(b);return Object.fromEntries(changedPaths(a,b).filter(allowedPath).map(path=>[path,clone(values[path])]));},demoSettings:(id,context)=>id?normalized({...presetValues(id,context==='faq'?false:standalone()),appearance:id}):normalized(defaults()),openMenuFor(context,anchor){
     if(api.isActive?.()===false||api.getMode()!=='edit'||!api.hasCommandTarget(context))return;
     const same=entry?.kind==='menu'&&transaction?.id===context.id;cancel();if(same)return;
     api.finishEdit();previousFocus=anchor;entry={kind:'menu',anchor};transaction={type:context.type,id:context.id,ids:clone(context.ids),original:defaults(),draft:defaults(),replaced:[],reset:[]};surfaceChanged();openMenu(anchor,structuredClone(context));api.historyChanged();

@@ -801,7 +801,7 @@ window.createWidgetScenario = function(config={}) {
       const source=state.faq;if(!source||!source.items.length)return;
       const {items:sourceItems,...container}=source;
       const origin={container:structuredClone(container),itemIds:sourceItems.map(item=>item.id)};
-      const values=sourceItems.map(item=>{const copy=structuredClone(item);delete copy.parentId;copy.groupOriginId=source.id;copy.open=false;copy.demoSettings=structuredClone(properties.itemSettings(item.id));return copy;});
+      const values=sourceItems.map(item=>{const copy=structuredClone(item);delete copy.parentId;copy.groupOriginId=source.id;copy.open=false;copy.demoSettings=structuredClone(properties.detachedSettings(item.id));return copy;});
       state.demoSet={id:scenarioId+'-grouping-set',capabilities:'grouping-demo',items:values,group:null,origin};
       state.faq=null;
     }
