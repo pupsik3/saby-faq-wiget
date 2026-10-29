@@ -9,6 +9,7 @@ window.createWidgetScenario = function(config={}) {
   const questions = standalone?faq:faq.querySelector('.questions');
   const toolbar = faq.querySelector('.toolbar');
   const column = faq.parentElement;
+  const stackId = 'faq-parent-stack';
   const slotId = 'faq-slot-main';
   let widgetStore = null, nextFaqId = 1, initialFaqSettings = null;
   const insertion = document.createElement('section');
@@ -69,7 +70,7 @@ window.createWidgetScenario = function(config={}) {
   ];
   const findItem = id => items().find(e => e.id === id);
   const demoOnly=()=>Boolean(state.demoSet);
-  const groupReady=()=>state.selection?.type==='demo-multi'&&!state.demoSet?.group&&(standalone?state.selection.ids.length>=2:state.selection.ids.length===3)&&state.selection.ids.every(id=>items().some(item=>item.id===id));
+  const groupReady=()=>state.selection?.type==='demo-multi'&&!state.demoSet?.group&&(standalone?state.selection.ids.length>=2:state.selection.ids.length===items().length&&items().length>0)&&state.selection.ids.every(id=>items().some(item=>item.id===id));
   const itemAt = target => findItem(target.closest('.spoiler')?.dataset.spoilerId);
   // Only document data is captured: view state (selection, open answers, scroll, mode) stays live.
   function documentSnapshot() {
@@ -129,7 +130,7 @@ window.createWidgetScenario = function(config={}) {
     window.getSelection()?.removeAllRanges();
     mountFaq();
     if(standalone)select(selection&&ids.has(selection.id)?selection:items()[0]?widgetSelection(items()[0].id):null);
-    else select(!state.faq?{type:'insertion',id:slotId}:!selection||selection.type==='insertion'||selection.type==='faq'&&selection.id!==state.faq.id||selection.type==='spoiler'&&!ids.has(selection.id)
+    else select(!state.faq?{type:'insertion',id:slotId}:!selection||selection.type==='insertion'||selection.type==='faq'&&selection.id!==state.faq.id||selection.type==='spoiler'&&!ids.has(selection.id)||selection.type==='stack'&&selection.faqId!==state.faq.id
       ? {type:'faq',id:state.faq.id} : selection);
     canvas.scrollTop = scrollTop;
   }
@@ -420,10 +421,11 @@ window.createWidgetScenario = function(config={}) {
   function renderToolbar() {
     if(demoOnly()&&!['faq','spoiler'].includes(state.selection?.type)){renderDemoToolbar();return;}
     if(state.demoSet?.group){const host=demoHost.querySelector('.grouped-faq');if(host&&toolbar.parentElement!==host)host.prepend(toolbar);}
+    else {const host=state.selection?.type==='stack'?column:faq;if(toolbar.parentElement!==host)host.prepend(toolbar);}
     toolbar.hidden=false;
-    const kind = ['faq','spoiler','standalone'].includes(state.selection?.type)?state.selection.type:null;
+    const kind = ['faq','spoiler','standalone','stack'].includes(state.selection?.type)?state.selection.type:null;
     if (kind && kind !== toolbarKind) {
-      const names = kind === 'faq' ? faqNames : kind==='standalone'?['Открыть','Оформление','Раскрытие','Текст','Настройки','Удалить','Ещё']:spoilerNames;
+      const names = kind === 'stack' ? ['Назад','Колонка','Гориз. выравнивание','Верт. выравнивание','Настройки','Удалить','Ещё'] : kind === 'faq' ? faqNames : kind==='standalone'?['Открыть','Оформление','Раскрытие','Текст','Настройки','Удалить','Ещё']:spoilerNames;
       toolbar.replaceChildren(...names.map((name,index) => {
         const button = document.createElement('button');
         button.type = 'button'; button.className = 'toolbar-button'; button.setAttribute('aria-label',name);
@@ -433,7 +435,7 @@ window.createWidgetScenario = function(config={}) {
           if(!faqIcons[index]){icon.textContent=['\uE9A9','\uEB25','\uEBBB','\uEAC9','\uEAC9','\uE75D','\uEB72','\uEAB4'][index];if(index===3)icon.innerHTML='<img src="assets/faq-expand.svg" alt="">';if(index===6)icon.className='danger';}
           if (icon.querySelector('img')) icon.classList.add('toolbar-svg');
         } else {
-          icon = document.createElement('i'); icon.textContent = kind==='standalone'?['\uE9E6','\uEBBB','\uEAC9','\uEAC9','\uE75D','\uEB72','\uEAB4'][index]:spoilerGlyphs[index];
+          icon = document.createElement('i'); icon.textContent = kind==='stack'?['\uE9A9','\uEAC3','\uEBC2','\uEBC3','\uE75D','\uEB72','\uEAB4'][index]:kind==='standalone'?['\uE9E6','\uEBBB','\uEAC9','\uEAC9','\uE75D','\uEB72','\uEAB4'][index]:spoilerGlyphs[index];
           if(kind==='standalone'&&index===2){icon.className='toolbar-svg';icon.innerHTML='<img src="assets/faq-expand.svg" alt="">';}
           if (name === 'Удалить') icon.className = 'danger';
         }
@@ -443,12 +445,13 @@ window.createWidgetScenario = function(config={}) {
         if (kind !== 'faq' && name === 'Текст') button.dataset.command = 'typography';
         if (kind !== 'faq' && name === 'Ещё') button.dataset.command = 'menu';
         if (kind !== 'spoiler' && ['Оформление','Раскрытие','Свойства текста','Ещё'].includes(name)) button.dataset.command = {'Оформление':'appearance','Раскрытие':'reveal','Свойства текста':'typography','Ещё':'menu'}[name];
-        if (kind === 'spoiler' && name === 'Назад') button.dataset.command = 'parent';
+        if ((kind === 'spoiler'||kind==='faq'&&!standalone) && name === 'Назад') button.dataset.command = 'parent';
         if (name === 'Удалить') button.dataset.command = 'delete';
         if ((kind === 'spoiler' && index === 2)||(kind==='standalone'&&index===0)) {
           button.classList.add('spoiler-toggle-label');
           const label = document.createElement('span'); label.textContent = 'Открыть'; button.append(label);
         }
+        if(kind==='stack'){delete button.dataset.command;button.setAttribute('aria-disabled','true');button.title='Команда родительского блока пока недоступна';}
         return button;
       }));
       if(kind==='faq'&&standalone&&demoOnly())toolbar.firstElementChild.remove();
@@ -470,6 +473,7 @@ window.createWidgetScenario = function(config={}) {
     positionToolbar();
   }
   function select(selection) {
+    if(selection?.type==='stack'&&(standalone||demoOnly()||!state.faq||selection.id!==stackId||selection.faqId!==state.faq.id))selection=null;
     properties.selectionChanged(selection);
     state.selection = state.mode === 'edit' ? selection : null;
     editor.dataset.selectionType = state.selection?.type || 'none';
@@ -495,6 +499,7 @@ window.createWidgetScenario = function(config={}) {
   function hasCommandTarget(context){
     if(context?.scenarioId&&context.scenarioId!==scenarioId)return false;
     if(context?.documentId&&context.documentId!==(standalone?state.document.id:'site-document'))return false;
+    if(context?.type==='stack')return !standalone&&!demoOnly()&&context.id===stackId&&context.faqId===state.faq?.id;
     if(demoOnly()){
       if(context?.type==='faq')return context.id===state.demoSet.group?.id;
       if(context?.type==='spoiler')return Boolean(parentOf(findItem(context.id)))&&(context.parentId===undefined||context.parentId===state.demoSet.group.id);
@@ -510,7 +515,7 @@ window.createWidgetScenario = function(config={}) {
   }
   function canMenuCommand(command,context){
     if(demoOnly())return active&&state.mode==='edit'&&hasCommandTarget(context)&&((context.type==='faq'&&command==='ungroup')||(context.type==='demo-multi'&&command==='group'&&groupReady()));
-    if(command==='ungroup')return active&&state.mode==='edit'&&context?.type==='faq'&&hasCommandTarget(context)&&items().length===3;
+    if(command==='ungroup')return active&&state.mode==='edit'&&context?.type==='faq'&&hasCommandTarget(context)&&items().length>0;
     const allowed={faq:['add','appearance','reveal','typography','properties'],spoiler:['add','typography','properties','delete'],standalone:['appearance','reveal','typography','properties','delete']};
     return active&&state.mode==='edit'&&hasCommandTarget(context)&&Boolean(allowed[context.type]?.includes(command));
   }
@@ -519,6 +524,11 @@ window.createWidgetScenario = function(config={}) {
     if(!active||state.mode!=='edit'||!hasCommandTarget(context)||state.selection?.type!==context.type||state.selection.id!==context.id)return false;
     if(context.type==='demo-multi'&&JSON.stringify(context.ids)!==JSON.stringify(state.selection.ids))return false;
     if(source==='menu'&&!canMenuCommand(command,context))return false;
+    if(context.type==='stack')return false;
+    if(command==='parent'&&context.type==='faq'&&!standalone&&!demoOnly()){
+      finishEdit();properties.cancel();if(drag)endDrag(false);window.getSelection()?.removeAllRanges();
+      select({type:'stack',id:stackId,faqId:state.faq.id});return true;
+    }
     if(demoOnly()&&context.type.startsWith('demo-')){
       if(command==='menu'){properties.openMenuFor(context,toolbar.querySelector('[data-command=menu]'));return true;}
       if(command==='group'&&groupReady()){groupDemo();return true;}
@@ -527,7 +537,7 @@ window.createWidgetScenario = function(config={}) {
     }
     if(demoOnly()&&command==='ungroup'&&context.type==='faq'){ungroupDemo();return true;}
     if(demoOnly()&&command!=='menu')return false;
-    if(command==='ungroup'&&context.type==='faq'&&items().length===3){ungroupDemo();return true;}
+    if(command==='ungroup'&&context.type==='faq'&&items().length>0){ungroupDemo();return true;}
     if(context.type==='faq'&&command==='delete'){deleteFaq(context.id);return true;}
     if(command==='add'){
       if(context.type==='spoiler'&&!parentOf(findItem(context.id)))return false;
@@ -761,7 +771,7 @@ window.createWidgetScenario = function(config={}) {
     questions.replaceChildren(...state.faq.items.map(createView));properties.paint();
     select({type:'faq',id:state.faq.id});recordChange(before);return true;
   }
-  // A fixed three-item demonstration, deliberately separate from editable widgets.
+  // A restricted set; Builder retains all members of the source FAQ.
   function rebuildDemo(){
     for(const view of views.values())view.mount.remove();views.clear();
     questions.replaceChildren();demoHost.replaceChildren();demoHost.hidden=false;
@@ -788,7 +798,7 @@ window.createWidgetScenario = function(config={}) {
       state.demoSet.group=null;
     }
     else{
-      const source=state.faq;if(!source||source.items.length!==3)return;
+      const source=state.faq;if(!source||!source.items.length)return;
       const {items:sourceItems,...container}=source;
       const origin={container:structuredClone(container),itemIds:sourceItems.map(item=>item.id)};
       const values=sourceItems.map(item=>{const copy=structuredClone(item);delete copy.parentId;copy.groupOriginId=source.id;copy.open=false;copy.demoSettings=structuredClone(properties.itemSettings(item.id));return copy;});
@@ -844,7 +854,7 @@ window.createWidgetScenario = function(config={}) {
   }
   function renderDemoToolbar(){
     if(toolbar.parentElement!==demoHost)demoHost.prepend(toolbar);
-    const type=state.selection?.type,grouped=type==='demo-group',multi=type==='demo-multi'&&state.selection.ids.length>1;
+    const type=state.selection?.type,grouped=type==='demo-group',multi=type==='demo-multi'&&(state.selection.ids.length>1||!standalone&&items().length===1);
     const kind=type&&type.startsWith('demo-')?(grouped?'demo-group':multi?'demo-multi':'demo-single'):null;
     if(kind!==toolbarKind){
       const entries=grouped?[['Назад','parent','E9A9'],['Добавить','add','EB25'],['Оформление','appearance','EBBB'],['Раскрытие','reveal','reveal'],['Текст','typography','EAC9'],['Настройки','properties','E75D'],['Удалить','delete','EB72'],['Ещё','menu','EAB4']]:multi?[...(!standalone?[['Назад','parent','E9A9']]:[]),['Сгруппировать','group','group'],['Удалить','delete','EB72'],['Ещё','menu','EAB4']]:[...(!standalone?[['Назад','parent','E9A9']]:[]),['Открыть','open','E9E6'],['Оформление','appearance','EBBB'],['Раскрытие','reveal','reveal'],['Текст','typography','EAC9'],['Настройки','properties','E75D'],['Удалить','delete','EB72'],['Ещё','menu','EAB4']];
@@ -853,12 +863,12 @@ window.createWidgetScenario = function(config={}) {
         if(['group','reveal'].includes(glyph))button.innerHTML='<img class="demo-command-icon" src="assets/'+(glyph==='group'?'pg-menu-group':'faq-expand')+'.svg" alt="">';
         else {const icon=document.createElement('i');icon.textContent=String.fromCodePoint(parseInt(glyph,16));icon.setAttribute('aria-hidden','true');if(command==='delete')icon.className='danger';button.append(icon);}
         if(command==='open'){button.classList.add('spoiler-toggle-label');const text=document.createElement('span');text.textContent=label;button.append(text);}
-        button.title=command==='menu'?label:command==='group'?'Выберите три спойлера демонстрационного набора':'Недоступно в демонстрационном наборе';
+        button.title=command==='menu'?label:command==='group'?'Выберите все разгруппированные спойлеры':'Недоступно в демонстрационном наборе';
         return button;
       }));toolbarKind=kind;
     }
     toolbar.hidden=!kind;toolbar.inert=state.mode!=='edit'||!kind;toolbar.dataset.context=kind||'none';toolbar.dataset.ownerId=state.selection?.id||'';
-    const group=toolbar.querySelector('[data-command=group]');if(group){group.disabled=!groupReady();group.title=groupReady()?'Сгруппировать':'Выберите все три спойлера';}
+    const group=toolbar.querySelector('[data-command=group]');if(group){group.disabled=!groupReady();group.title=groupReady()?'Сгруппировать':'Выберите все разгруппированные спойлеры';}
     positionToolbar();
   }
   if(standalone){state.document.widgets=demoSeed.map(content=>makeItem(undefined,content));state.selection=widgetSelection(items()[0].id);}
@@ -906,10 +916,12 @@ window.createWidgetScenario = function(config={}) {
     if (state.mode === 'edit') {
       if (item) {
         if (session?.field === event.target || session?.field.contains(event.target)) return;
+        const fromStack=state.selection?.type==='stack';
         const wasSelected = state.selection?.type === widgetSelection(item.id).type && state.selection.id === item.id;
         select(widgetSelection(item.id));
+        if(fromStack)window.getSelection()?.removeAllRanges();
         if (event.target.closest('.spoiler-arrow')) toggle(item);
-        else if (event.target.closest('.answer-editor')) startEdit(event.target.closest('.answer-line') || views.get(item.id).answer.lastElementChild);
+        else if (!fromStack && event.target.closest('.answer-editor')) startEdit(event.target.closest('.answer-line') || views.get(item.id).answer.lastElementChild);
         else if (wasSelected && event.target.closest('.question-text')) {
           const field = views.get(item.id).question;
           editQuestionAt(field,event); questionStartedOnClick = field;

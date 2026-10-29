@@ -144,3 +144,7 @@ button.save{width:116px;justify-content:space-between;padding-top:0;padding-bott
 .editor[data-mode=edit] .faq-column{position:relative;outline:none}
 .editor[data-mode=edit] .faq-column:after{content:"";position:absolute;inset:0;box-sizing:border-box;border:1px dashed var(--selection-border);border-radius:2px;pointer-events:none;z-index:1}
 .editor[data-mode=edit] .faq-widget:after{content:'';position:absolute;box-sizing:border-box;inset:var(--guide-top,0px) var(--guide-right,0px) var(--guide-bottom,0px) var(--guide-left,0px);border:1px dashed var(--selection-border);border-radius:2px;pointer-events:none;z-index:3}
+/* Builder selection navigation: the stack owns the title and FAQ, without a new document group. */
+.editor[data-scenario=site][data-mode=edit][data-selection-type=stack] .faq-column:after{border-style:solid;border-color:var(--info-border)}
+.editor[data-scenario=site][data-mode=edit][data-selection-type=stack] .faq-widget:after{content:none}
+.editor[data-scenario=site][data-mode=edit][data-selection-type=stack] .faq-column>.toolbar{display:flex;width:240px}

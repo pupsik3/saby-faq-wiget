@@ -66,6 +66,7 @@ body{background:#eae9ee url('assets/prototype-background.jpg') repeat top left /
 .grouping-demo{position:relative;width:100%;display:flex;flex-direction:column;gap:8px}
 .grouping-demo[hidden],.document-insertion-line[hidden],.standalone-widgets[hidden]{display:none!important}
 .grouped-faq>.questions{display:flex;flex-direction:column}
+.document-editor[data-mode=edit]:not([data-faq-selected=true]) .grouping-demo.is-grouped .grouped-faq:after{content:none}
 .grouping-demo[data-environment=document]:not(.is-grouped){gap:12px}
 .demo-spoiler-frame{position:relative;width:100%}
 .demo-spoiler-frame>.questions{display:flex;flex-direction:column}
@@ -101,14 +102,19 @@ body{background:#eae9ee url('assets/prototype-background.jpg') repeat top left /
 .document-editor[data-mode=preview] .document-formatbar{visibility:hidden;pointer-events:none}
 .document-editor[data-mode=preview] .document-preview-sidebar{display:block;width:54px;height:856px;object-fit:cover}
 .document-editor[data-mode=preview] .document-help{display:none}
-.pg-aux[data-widget-context=standalone] .pg-appearance-cards .pg-choice-card{height:150px}
+.pg-aux[data-widget-context=standalone] .pg-appearance-cards .pg-choice-card{height:134px}
 .pg-aux[data-widget-context=standalone] .pg-appearance-cards .pg-faq-sample{height:134px;padding:16px 16px 16px 20px;justify-content:center;align-items:stretch}
 .pg-aux[data-widget-context=standalone] .pg-appearance-cards .faq-sample-spoiler{width:100%;flex:none}
-.pg-aux[data-widget-context=standalone] .pg-faq-sample[data-appearance=accent-line]>.faq-sample-spoiler{border-left:0;padding-left:0}
+.pg-aux[data-widget-context=standalone] .pg-faq-sample[data-appearance=accent-line]>.faq-sample-spoiler{border-left:2px solid #333;padding-left:10px}
 .pg-aux[data-widget-context=standalone] .pg-faq-sample[data-appearance=outline]>.faq-sample-spoiler{border-radius:8px}
+.pg-aux[data-widget-context=standalone] .pg-appearance-cards .pg-faq-sample[data-appearance=outline]{padding:15px}
+.pg-aux[data-widget-context=standalone] .pg-appearance-cards .pg-faq-sample[data-appearance=outline]>.faq-sample-spoiler{padding:12px}
+.pg-aux[data-widget-context=standalone] .pg-sample-separator{display:block;width:384px;height:1px;margin:6px 0 10px;pointer-events:none;user-select:none}
 .pg-aux[data-widget-context=standalone] .pg-sample-answer{-webkit-line-clamp:3}
 .pg-aux[data-widget-context=standalone] .pg-appearance-cards .pg-faq-sample:is([data-appearance=filled],[data-appearance=outline]) .pg-sample-answer{-webkit-line-clamp:2}
 .pg-aux[data-widget-context=standalone] .pg-reveal-sample{height:125px;background:white;padding:0}
 .pg-aux[data-widget-context=standalone] .pg-reveal-sample>img{width:340px;height:125px}
+.pg-aux[data-widget-context=standalone][data-kind=reveal]{gap:6px}
+.pg-aux[data-widget-context=standalone] .pg-reveal-cards .pg-choice-check{bottom:41px}
 
 .pg-document-size-tools{display:flex;gap:4px;margin-right:auto}.pg-document-size-tools button{display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;border:0;background:rgba(51,51,51,.05)}.pg-document-size-tools button+button{border:1px solid #e4e4e4;background:transparent}.pg-document-size-tools img{width:12px;height:12px}.property-grid[data-widget-context=standalone][data-level=button] .pg-header h2{margin-right:8px}
